@@ -14,11 +14,13 @@ vec3 hsb2rgb( in vec3 c ){
     return c.z * mix(vec3(1.0), rgb, c.y);
 }
 
-// Return 1 if a pixel is withing a rectangular area, 0 if it is not
+// Returns 1 if a pixel is within a central rectangular
+// area of a certain size
 float rect(in vec2 coord, in vec2 size){
-    vec2 uv = step(size, coord * (1.0 - coord));
+    size = size * (1.0 - size);
+    vec2 _coord = step(size, coord * (1.0 - coord));
 
-    return uv.x * uv.y;
+    return _coord.x * _coord.y;
 }
 
 void main() {
@@ -26,12 +28,11 @@ void main() {
     vec2 coord = vTexCoord;
 
     // change the background color based on the y position of the mouse. Using
-    // hsb makes this simpler by allowing us to map the mouse Y position to
+    // hsb makes this much simpler by allowing us to map the mouse Y position to
     // the hue value.
     vec3 backgroundColor = hsb2rgb(vec3(mouse.y, 1, 1));
 
-    // use the inverted hue on the foreground color by using the mouse y position
-    // in the opposite direction.
+    // use the inverted hue on the foreground color by using the mouse y position.
     vec3 foregroundColor = hsb2rgb(vec3(1.0 - mouse.y, 1, 1));
 
     // Mix uses the third parameter to interpolate between two values
@@ -39,11 +40,9 @@ void main() {
     vec3 color = mix(
         backgroundColor,
         foregroundColor,
-
         // use the pixel coordinates to mix between the foreground and background color.
-        // Uses the mouse X position to determine when the break should happen, simulating
-        // a shape within a shape.
-        rect(coord, vec2(1.0 - (mouse.x)))
+        // Uses the mouse X position to determine the size of the rectangular area.
+        rect(coord, vec2(mouse.x / 2.0))
     );
 
     gl_FragColor = vec4(color, 1.0);
