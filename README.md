@@ -1,7 +1,7 @@
 # Generative Gestaltung in GLSL
 
 This collection of sketches is a port of [Generative Gestaltung](https://www.amazon.com/Generative-Design-Visualize-Program-JavaScript/dp/1616897589/ref=pd_lpo_14_t_0/139-7050311-6114905?_encoding=UTF8&pd_rd_i=1616897589&pd_rd_r=2ad6ac94-860d-4f98-978f-190521263a9b&pd_rd_w=oYe0w&pd_rd_wg=Np8bH&pf_rd_p=7b36d496-f366-4631-94d3-61b87b52511b&pf_rd_r=QZ4CXZ81D04M6GBN45CK&psc=1&refRID=QZ4CXZ81D04M6GBN45CK) 
-to GL Shader Language using [p5.js](https://github.com/processing/p5.js) for easy shader loading.
+to GL Shader Language using [p5.js](https://github.com/processing/p5.js) for easy shader loading. Not all sketches are "perfect" copies due to the different nature of approaching concepts in GLSL and JS. The most important concepts are there, some might just look/feel a bit different. If you have a different approach to any of the sketches, by all means submit a PR <3.
 
 ### What is Generative Gestaltung?
 
