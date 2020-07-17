@@ -10,6 +10,8 @@ uniform vec2 resolution;
 uniform float time;
 uniform vec2 mouse;
 
+const float TWO_PI = 6.28318530718;
+
 //  HSB to RGB function from Iñigo Quiles
 //  https://www.shadertoy.com/view/MsS3Wc
 vec3 hsb2rgb( in vec3 c ){
@@ -27,59 +29,76 @@ vec3 hsv2rgb(vec3 c)
 
 
 // http://www.flong.com/texts/code/shapers_exp/
-float exponentialEasing(in float x, in float a){
+float easing (float x, float a, float b){
+
     float epsilon = 0.00001;
     float min_param_a = 0.0 + epsilon;
     float max_param_a = 1.0 - epsilon;
-    a = max(min_param_a, min(max_param_a, a));
+    float min_param_b = 0.0;
+    float max_param_b = 1.0;
+    a = min(max_param_a, max(min_param_a, a));
+    b = min(max_param_b, max(min_param_b, b));
 
-    if (a < 0.5){
-        // emphasis
-        a = 2.0*(a);
-        float y = pow(x, a);
-        return y;
+    float y = 0.0;
+    if (x <= a){
+        y = b - b*pow(1.0-x/a, 3.0);
     } else {
-        // de-emphasis
-        a = 2.0*(a-0.5);
-        float y = pow(x, 1.0/(1.0-a));
-        return y;
+        y = b + (1.0-b)*pow((x-a)/(1.0-a), 3.0);
     }
+    return y;
 }
 
 vec3 getColor(in vec2 coords, in float xGridCount) {
     return hsb2rgb(vec3(coords.x, 1, 1));
 }
 
-void main() {
-    vec2 pixel = vTexCoord;
+float circle(in vec2 _st, in float _radius){
+    vec2 dist = _st - vec2(0.5);
+    return 1.0-smoothstep(_radius-(_radius*0.8), _radius+(_radius*0.01), dot(dist,dist)*4.0);
+}
 
-    // Instead of using the mouse position linearly, we are using an
-    // ease function so the visualization interaction feels smoother.
-    // Test different values [0-1.0] and notice how the change feels different.
-    float easeFactor = 0.1;
-    float mouseXSmoothed = exponentialEasing(mouse.x, easeFactor);
-    float mouseYSmoothed = exponentialEasing(mouse.y, easeFactor);
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
 
-    // The purpose of this sketch is to bring in the concept of the grid.
-    // We will take it a step further by adding mouse interaction, but the "Using the chaos" section
-    // from the book of shaders makes it very easy to see how grids can be accomplished:
-    // https://thebookofshaders.com/10/
-    // The following means when the mouse is at the minumum [0], scale the axis to 300 segments
-    // When the mouse is at the maximum [1], scale the axis to 1 segment
-    // Try `mouseXScaled = mouseXSmooted * scaleFactor` and see what happens
-    float scaleFactor = 300.0;
-    float mouseXScaled = (1.0 - mouseXSmoothed) * scaleFactor;
-    float mouseYScaled = (1.0 - mouseYSmoothed) * scaleFactor;
 
-    // Now that the mouse variable keeps track of how many segments our grid is divided into
-    // we multiply the pixel by the total number of segments and only get the whole number
-    // value by using floor: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/floor.xhtml
-    // Again, if this breaks your braina bit, take a look at "Mosaic" example in https://thebookofshaders.com/10/
-    float pixelX = floor(pixel.x * mouseXScaled);
-    float pixelY = floor(pixel.y * mouseYScaled);
-
-    // using max to not let the saturation value fall to less than 0.1, avoiding complete white
-    vec3 color = hsv2rgb(vec3(pixelX / mouseXScaled, max(0.1, pixelY / mouseYScaled), 1));
-
-    gl_FragColor = vec4(color, 1);
+void main()
+{
+    float scale = .007;
+    float rise_speed = 100.0;
+    float density = .5+.5*abs(fract(time*.01)*2.-1.);
+    float layer_speed_scale = 1.0;
+    vec2 uv = gl_FragCoord.xy * vec2(2.,2.);
+    vec2 x = uv;
+    x *= .001;
+    uv.y -= time*rise_speed;
+    vec2 a = uv * scale;
+    float s = fract(x.y*.5);
+    s += s - 1.;
+    float w = fract(time*.3+.9*a.y*.1);
+    w += w - 1.;
+    w *= 1.;
+    float c = fract(a.y*.5);
+    c += c - 1.;
+    c *= .2;
+    a.x += a.y * abs(w) * .3 * abs(c);
+    vec2 i = floor(a);
+    float it = fract(time * (i.x+10.)*.03);
+    it += it - 1.;
+    a.y += ((1.+i.x)*(1.+i.x)*.3213+.2*abs(it)); // Wave pattern
+    a.y -= time*layer_speed_scale*fract(abs(i.x*.312)); // Multi speed "layers"
+    a.y *= .5+.5*fract(i.x*.5);
+    a.y *= 2.;
+    a.x += 0.5;
+    vec2 i2 = floor(a+.5);
+    vec2 f = fract(a);
+    f += f - 1.;
+    f = abs(f);
+    float v = step(density,fract((fract(i2.y*.1)+fract(i.x*.01))*63.232));
+    float e = v*smoothstep(.5+.2*fract(-i.x*.3+.5),.99,f.x) * smoothstep(.75+.14*fract(i.x*.25+.23),.99,f.y);
+    vec3 col = mix(vec3(1.,.8,.0),vec3(.5,.05,.05),clamp(x.y*2.+1.+fract(i.x*.3),0.,1.));
+    vec3 bg = mix(vec3(.03,.01,.08),vec3(.0,.0,.0),x.y*5.);
+    //e = f.y; // Uncomment to see underlying field structure
+    col = mix(bg,e*col,e);
+    gl_FragColor = vec4(col,1.);
 }

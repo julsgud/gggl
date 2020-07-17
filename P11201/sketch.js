@@ -6,8 +6,10 @@ function preload(){
   myShader = loadShader('./vert.vert', './frag.frag');
 }
 
+const scaler = .90
+
 function setup() {
-  createCanvas(windowWidth, windowHeight, WEBGL);
+  createCanvas(windowHeight * scaler, windowHeight * scaler, WEBGL);
   noStroke();
 }
 
