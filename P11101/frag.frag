@@ -18,14 +18,6 @@ vec3 hsb2rgb( in vec3 c ){
     return c.z * mix(vec3(1.0), rgb, c.y);
 }
 
-vec3 hsv2rgb(vec3 c)
-{
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-
 // http://www.flong.com/texts/code/shapers_exp/
 float exponentialEasing(in float x, in float a){
     float epsilon = 0.00001;
@@ -44,10 +36,6 @@ float exponentialEasing(in float x, in float a){
         float y = pow(x, 1.0/(1.0-a));
         return y;
     }
-}
-
-vec3 getColor(in vec2 coords, in float xGridCount) {
-    return hsb2rgb(vec3(coords.x, 1, 1));
 }
 
 void main() {
@@ -79,7 +67,7 @@ void main() {
     float pixelY = floor(pixel.y * mouseYScaled);
 
     // using max to not let the saturation value fall to less than 0.1, avoiding complete white
-    vec3 color = hsv2rgb(vec3(pixelX / mouseXScaled, max(0.1, pixelY / mouseYScaled), 1));
+    vec3 color = hsb2rgb(vec3(pixelX / mouseXScaled, max(0.1, pixelY / mouseYScaled), 1));
 
     gl_FragColor = vec4(color, 1);
 }
