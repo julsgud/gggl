@@ -1,7 +1,5 @@
-// Based on: http://www.generative-gestaltung.de/2/sketches/?01_P/P_1_1_1_01
-// Implementation is slighlty different on the saturation / mouse y
-// due to the different nature of grids in webgl. If you can take it closer
-// to the example, by all means!
+// Based on: http://www.generative-gestaltung.de/2/sketches/?01_P/P_1_1_2_01
+
 precision mediump float;
 
 varying vec2 vTexCoord;
@@ -9,6 +7,16 @@ varying vec2 vTexCoord;
 uniform vec2 resolution;
 uniform float time;
 uniform vec2 mouse;
+// Keyboard Control made easy by p5.js
+// 1 = 360
+// 2 = 45
+// 3 = 24
+// 4 = 12
+// 5 = 6
+uniform float segments;
+
+#define PI 3.14159265359
+#define TWO_PI 6.28318530718
 
 //  HSB to RGB function from Iñigo Quiles
 //  https://www.shadertoy.com/view/MsS3Wc
@@ -18,68 +26,38 @@ vec3 hsb2rgb( in vec3 c ){
     return c.z * mix(vec3(1.0), rgb, c.y);
 }
 
-vec3 hsv2rgb(vec3 c)
-{
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-
-
-// http://www.flong.com/texts/code/shapers_exp/
-float exponentialEasing(in float x, in float a){
-    float epsilon = 0.00001;
-    float min_param_a = 0.0 + epsilon;
-    float max_param_a = 1.0 - epsilon;
-    a = max(min_param_a, min(max_param_a, a));
-
-    if (a < 0.5){
-        // emphasis
-        a = 2.0*(a);
-        float y = pow(x, a);
-        return y;
-    } else {
-        // de-emphasis
-        a = 2.0*(a-0.5);
-        float y = pow(x, 1.0/(1.0-a));
-        return y;
-    }
-}
-
-vec3 getColor(in vec2 coords, in float xGridCount) {
-    return hsb2rgb(vec3(coords.x, 1, 1));
-}
+// Polar coordinates are easier to understand by example.
+// This sketch is the union of two chapters from the
+// book of shaders: https://thebookofshaders.com/06/, https://thebookofshaders.com/07/
+// Reading through them will be very helpful in understanding the concepts used below:
+// 1. Polar shapes and HSB (used for coloring and creating circles and polygons)
+// 2. Distance Fields (used for creating foreground/background)
 
 void main() {
     vec2 pixel = vTexCoord;
 
-    // Instead of using the mouse position linearly, we are using an
-    // ease function so the visualization interaction feels smoother.
-    // Test different values [0-1.0] and notice how the change feels different.
-    float easeFactor = 0.1;
-    float mouseXSmoothed = exponentialEasing(mouse.x, easeFactor);
-    float mouseYSmoothed = exponentialEasing(mouse.y, easeFactor);
+    // map dimensions from [0-1] to [-1,1]
+    pixel = pixel * 2. - 1.;
 
-    // The purpose of this sketch is to bring in the concept of the grid.
-    // We will take it a step further by adding mouse interaction, but the "Using the chaos" section
-    // from the book of shaders makes it very easy to see how grids can be accomplished:
-    // https://thebookofshaders.com/10/
-    // The following means when the mouse is at the minumum [0], scale the axis to 300 segments
-    // When the mouse is at the maximum [1], scale the axis to 1 segment
-    // Try `mouseXScaled = mouseXSmooted * scaleFactor` and see what happens
-    float scaleFactor = 300.0;
-    float mouseXScaled = (1.0 - mouseXSmoothed) * scaleFactor;
-    float mouseYScaled = (1.0 - mouseYSmoothed) * scaleFactor;
+    // angle and radius from current pixel
+    float a = atan(pixel.x, pixel.y) + PI;
+    float r = TWO_PI/segments;
 
-    // Now that the mouse variable keeps track of how many segments our grid is divided into
-    // we multiply the pixel by the total number of segments and only get the whole number
-    // value by using floor: https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/floor.xhtml
-    // Again, if this breaks your braina bit, take a look at "Mosaic" example in https://thebookofshaders.com/10/
-    float pixelX = floor(pixel.x * mouseXScaled);
-    float pixelY = floor(pixel.y * mouseYScaled);
+    // Divide the angle into segments to achieve triangle fans,
+    // offset them to fit the hexagon just like the example sketch
+    float angleOffset = .5;
+    float segmentedAngle = ((a / TWO_PI) * segments) + angleOffset;
 
-    // using max to not let the saturation value fall to less than 0.1, avoiding complete white
-    vec3 color = hsv2rgb(vec3(pixelX / mouseXScaled, max(0.1, pixelY / mouseYScaled), 1));
+    float hue = floor(segmentedAngle) / segments;
+    float saturation = max(0.5, mouse.y * 2.0);
+    float brightness = max(0.5, mouse.x * 1.0);
+    vec3 shapeColor = hsb2rgb(vec3(hue, saturation, brightness));
 
-    gl_FragColor = vec4(color, 1);
+    // Distance fields for calculating distance to center for each pixel
+    float d = cos(floor(.5 + a/r) * r - a) * length(pixel);
+
+    // Use the distance field to draw color OR white
+    vec3 color = mix(shapeColor, vec3(1.0), step(.8, d));
+
+    gl_FragColor = vec4(color,1.0);
 }
