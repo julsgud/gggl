@@ -11,12 +11,12 @@ void main() {
     vec2 pixel = vTexCoord;
     vec3 color = vec3(0.0);
 
-    float segments = 3.0;
+    float segmentsX = mouse.x * 100.0;
+    pixel = pixel * (segmentsX + 1.0);
 
-    float scaledX = floor(pixel.x * segments);
+    float roundedDownX = floor(pixel.x);
 
-    // figure out the ceil?
-    color = mix(colorA, colorB, (scaledX + 1.0) / segments);
+    color = mix(colorA, colorB, roundedDownX / segmentsX);
 
     gl_FragColor = vec4(color,1.0);
 }
