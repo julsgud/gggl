@@ -1,3 +1,4 @@
+// TODO INCOMPLETE: Need to find a way to mix on two axis at the same time
 precision mediump float;
 
 varying vec2 vTexCoord;
@@ -17,9 +18,9 @@ vec3 colorsRight[10];
 
 void fillColors() {
     colorsLeft[0] = vec3(0.149,0.141,0.912);
-    colorsRight[0] = vec3(1.000,0.833,0.224);
     colorsLeft[1] = vec3(0.749,0.541,0.812);
-    colorsRight[2] = vec3(1.000,0.633,0.624);
+    colorsRight[0] = vec3(1.000,0.833,0.224);
+    colorsRight[1] = vec3(1.000,0.633,0.624);
     shouldShakeColors = false;
 }
 
@@ -34,9 +35,10 @@ void main() {
     float x = floor(pixel.x) / columns;
 
     float row = mouse.y * maxRows;
-    const int y = int(floor(row));
+    int y = int(floor(row));
 
-    color = mix(colorsLeft[index], colorsRight[index], min(1.0, x));
+    // Tried to use color arrays but indices need to be constants
+    color = mix(colorsLeft[0], colorsRight[0], min(1.0, x));
 
     gl_FragColor = vec4(color,1.0);
 }
